@@ -895,3 +895,8 @@
 "Update method" = "Update method";
 "View releases" = "View releases";
 "You're using the latest available version of PureMac." = "You're using the latest available version of PureMac.";
+
+/* Collapsible startup items (#172): English fallbacks */
+"A PureMac update is available" = "A PureMac update is available";
+"Settings need attention" = "Settings need attention";
+"Settings to review" = "Settings to review";
