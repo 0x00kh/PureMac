@@ -869,3 +869,8 @@
 "similar group" = "组相似照片";
 "similar groups" = "组相似照片";
 "tmutil is not available on this Mac." = "此 Mac 上无法使用 tmutil。";
+
+/* Additional interface strings. */
+"Check access" = "Check access";
+"Make PureMac work your way." = "Make PureMac work your way.";
+"Settings" = "Settings";

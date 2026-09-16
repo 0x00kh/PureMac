@@ -865,3 +865,8 @@
 "similar group" = "similar group";
 "similar groups" = "similar groups";
 "tmutil is not available on this Mac." = "tmutil is not available on this Mac.";
+
+/* Additional interface strings. */
+"Check access" = "Check access";
+"Make PureMac work your way." = "Make PureMac work your way.";
+"Settings" = "Settings";
