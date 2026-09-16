@@ -900,3 +900,29 @@
 "A PureMac update is available" = "A PureMac update is available";
 "Settings need attention" = "Settings need attention";
 "Settings to review" = "Settings to review";
+
+/* App CPU and memory (#173): English fallbacks */
+"1 process" = "1 process";
+"About these readings" = "About these readings";
+"App memory shows resident memory, including shared pages. App totals can differ from the summary." = "App memory shows resident memory, including shared pages. App totals can differ from the summary.";
+"Apps and processes" = "Apps and processes";
+"CPU - Memory" = "CPU - Memory";
+"CPU uses the Mac’s total capacity. App helpers are grouped with their app." = "CPU uses the Mac’s total capacity. App helpers are grouped with their app.";
+"CPU values appear after the next sample." = "CPU values appear after the next sample.";
+"Collapsed" = "Collapsed";
+"Expanded" = "Expanded";
+"Live updates paused" = "Live updates paused";
+"Measuring apps and processes…" = "Measuring apps and processes…";
+"Memory estimate includes active, wired and compressed memory." = "Memory estimate includes active, wired and compressed memory.";
+"Memory in use" = "Memory in use";
+"No matching apps or processes" = "No matching apps or processes";
+"Paused" = "Paused";
+"Process information is unavailable. Try Activity Monitor for more detail." = "Process information is unavailable. Try Activity Monitor for more detail.";
+"Restart to apply your language" = "Restart to apply your language";
+"Review Full Disk Access" = "Review Full Disk Access";
+"Review launch at login" = "Review launch at login";
+"Search apps and processes" = "Search apps and processes";
+"Show all apps and processes" = "Show all apps and processes";
+"Show top 8" = "Show top 8";
+"Some protected or changing processes could not be measured." = "Some protected or changing processes could not be measured.";
+"Sort by" = "Sort by";
