@@ -116,6 +116,35 @@ final class AppStateTests: XCTestCase {
         XCTAssertEqual(state.scanState, .completed)
     }
 
+    func testManagedDerivedDataRequiresManualSelectionEvenForScheduledCleanup() {
+        let state = AppState(performStartupTasks: false)
+        let item = CleanableItem(
+            name: "XcodeBuildMCP: Fixture",
+            path: XcodeBuildMCPDerivedDataSupport.managedRoot()
+                .appendingPathComponent("workspaces/Fixture-\(UUID().uuidString)/DerivedData").path,
+            size: 4_096,
+            category: .xcodeJunk,
+            isSelected: false,
+            lastModified: .distantPast
+        )
+        state.categoryResults[.xcodeJunk] = CategoryResult(category: .xcodeJunk, items: [item], totalSize: item.size)
+        state.scanState = .completed
+
+        XCTAssertFalse(state.isItemSelected(item))
+        XCTAssertEqual(state.totalSelectedSize, 0)
+        state.cleanAll()
+        XCTAssertEqual(state.scanState, .completed)
+        state.cleanAll(scheduled: true)
+        XCTAssertEqual(state.scanState, .completed)
+        XCTAssertEqual(state.categoryResults[.xcodeJunk]?.items.map(\.id), [item.id])
+
+        state.toggleItem(item)
+        XCTAssertTrue(state.isItemSelected(item))
+        XCTAssertEqual(state.totalSelectedSize, item.size)
+        state.toggleItem(item)
+        XCTAssertFalse(state.isItemSelected(item))
+    }
+
     func testScheduledScanWaitsForActiveOperations() {
         let state = AppState(performStartupTasks: false)
         state.scanState = .cleaning(progress: 0.2)
@@ -201,7 +230,7 @@ final class XcodeBuildMCPStorageTests: XCTestCase {
             "Expected \(expectedPath); scanned: \(result.items.map(\.path))"
         )
         XCTAssertEqual(item.name, "XcodeBuildMCP: PureMac")
-        XCTAssertTrue(item.isSelected)
+        XCTAssertFalse(item.isSelected)
         XCTAssertFalse(result.items.contains { $0.path == logs.path })
         XCTAssertFalse(result.items.contains { $0.path == symlinkedDerivedData.path })
     }
@@ -285,7 +314,7 @@ final class XcodeBuildMCPStorageTests: XCTestCase {
         })
 
         XCTAssertEqual(item.name, "XcodeBuildMCP: Legacy DerivedData")
-        XCTAssertTrue(item.isSelected)
+        XCTAssertFalse(item.isSelected)
     }
 
     func testCleaningManagedDerivedDataLeavesWorkspaceStateIntact() async throws {

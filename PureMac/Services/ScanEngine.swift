@@ -483,9 +483,8 @@ actor ScanEngine {
             }
         }
 
-        // XcodeBuildMCP DerivedData follows ordinary Xcode DerivedData
-        // selection semantics. Scheduled cleanup applies an additional age and
-        // lifecycle-lock guard in AppState before including these rows.
+        // XcodeBuildMCP DerivedData requires explicit user selection.
+        // Scheduled cleanup also applies age and lifecycle-lock guards.
         let homeURL = URL(fileURLWithPath: home, isDirectory: true)
         for discovered in XcodeBuildMCPDerivedDataSupport.discoverDerivedDataDirectories(
             homeDirectory: homeURL,
@@ -495,7 +494,7 @@ actor ScanEngine {
                 name: discovered.name,
                 path: discovered.url.path,
                 category: .xcodeJunk,
-                isSelected: true
+                isSelected: false
             ) {
                 items.append(item)
             }
