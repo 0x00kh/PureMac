@@ -158,7 +158,7 @@ enum XcodeBuildMCPDerivedDataSupport {
     /// when XcodeBuildMCP (or another PureMac process) wins the race.
     ///
     /// A legacy shared DerivedData path has no workspace lock, so it returns
-    /// nil and must not be deleted by a caller that requires coordination.
+    /// nil; callers move that root to the Trash without coordination.
     static func acquireLifecycleLock(
         forManagedDerivedDataPath path: String,
         homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser,

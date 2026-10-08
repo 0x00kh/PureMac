@@ -136,6 +136,32 @@ final class XcodeBuildMCPDerivedDataSupportTests: XCTestCase {
         XCTAssertFalse(item.isSelected)
     }
 
+    func testCleaningLegacySharedDerivedDataMovesToTrashWithoutWorkspaceLock() async throws {
+        let fileManager = FileManager.default
+        let temporaryHome = fileManager.temporaryDirectory
+            .appendingPathComponent("PureMac-XcodeBuildMCP-LegacyClean-\(UUID().uuidString)", isDirectory: true)
+        defer { try? fileManager.removeItem(at: temporaryHome) }
+
+        let managedRoot = temporaryHome
+            .appendingPathComponent("Library/Developer/XcodeBuildMCP", isDirectory: true)
+        let legacyDerivedData = managedRoot.appendingPathComponent("DerivedData", isDirectory: true)
+        try fileManager.createDirectory(at: legacyDerivedData, withIntermediateDirectories: true)
+        try Data(repeating: 0xEF, count: 4_096)
+            .write(to: legacyDerivedData.appendingPathComponent("legacy-build-product"))
+
+        let scan = await ScanEngine(homeDirectory: temporaryHome).scanCategory(.xcodeJunk)
+        let item = try XCTUnwrap(scan.items.first { $0.name == "XcodeBuildMCP: Legacy DerivedData" })
+        let result = await CleaningEngine(homeDirectory: temporaryHome).cleanItems([item]) { _ in }
+
+        XCTAssertEqual(result.itemsCleaned, 1)
+        XCTAssertTrue(result.errors.isEmpty)
+        XCTAssertFalse(fileManager.fileExists(atPath: legacyDerivedData.path))
+        XCTAssertFalse(fileManager.fileExists(atPath: managedRoot.appendingPathComponent("locks").path))
+        let trashedPath = try XCTUnwrap(result.trashedPaths.first)
+        XCTAssertTrue(fileManager.fileExists(atPath: trashedPath))
+        try? fileManager.removeItem(atPath: trashedPath)
+    }
+
     func testCleaningManagedDerivedDataLeavesWorkspaceStateIntact() async throws {
         try await assertCleaningManagedDerivedDataLeavesWorkspaceStateIntact(tool: "XcodeBuildMCP")
     }

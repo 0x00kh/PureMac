@@ -170,21 +170,33 @@ actor CleaningEngine {
                     homeDirectory: homeDirectory
                 )
                 if isManagedDerivedData {
-                    guard let lifecycleLock = XcodeBuildMCPDerivedDataSupport.acquireLifecycleLock(
+                    // The legacy shared root predates XcodeBuildMCP's
+                    // per-workspace lock, so only workspace DerivedData waits
+                    // for the lock before moving to the Trash.
+                    var lifecycleLock: XcodeBuildMCPDerivedDataSupport.LifecycleLock?
+                    if XcodeBuildMCPDerivedDataSupport.workspaceKey(
                         forManagedDerivedDataPath: resolved,
-                        homeDirectory: homeDirectory,
-                        fileManager: fileManager
-                    ) else {
-                        let detail = "Skipped XcodeBuildMCP DerivedData: lifecycle lock is unavailable: \(item.path)"
-                        Logger.shared.log(detail, level: .warning)
-                        result.errors.append(detail)
-                        continue
+                        homeDirectory: homeDirectory
+                    ) != nil {
+                        guard let acquired = XcodeBuildMCPDerivedDataSupport.acquireLifecycleLock(
+                            forManagedDerivedDataPath: resolved,
+                            homeDirectory: homeDirectory,
+                            fileManager: fileManager
+                        ) else {
+                            let detail = "Skipped XcodeBuildMCP DerivedData: lifecycle lock is unavailable: \(item.path)"
+                            Logger.shared.log(detail, level: .warning)
+                            result.errors.append(detail)
+                            continue
+                        }
+                        lifecycleLock = acquired
                     }
                     defer {
-                        XcodeBuildMCPDerivedDataSupport.releaseLifecycleLock(
-                            lifecycleLock,
-                            fileManager: fileManager
-                        )
+                        if let lifecycleLock {
+                            XcodeBuildMCPDerivedDataSupport.releaseLifecycleLock(
+                                lifecycleLock,
+                                fileManager: fileManager
+                            )
+                        }
                     }
                     // PureMac's safety contract is Trash-only for recoverable
                     // cleanup. XcodeBuildMCP DerivedData must not be unlinked.
