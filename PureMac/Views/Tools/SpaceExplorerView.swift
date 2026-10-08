@@ -357,8 +357,8 @@ struct SpaceExplorerView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
-                        StatusChip(label: String(localized: "\(result.fileCount) files"), systemImage: "doc", tint: Tint.accent)
-                        StatusChip(label: String(localized: "\(result.directoryCount) folders"), systemImage: "folder", tint: Tint.accent)
+                        StatusChip(label: StorageEntryRow.fileCountLabel(result.fileCount), systemImage: "doc", tint: Tint.accent)
+                        StatusChip(label: StorageEntryRow.folderCountLabel(result.directoryCount), systemImage: "folder", tint: Tint.accent)
                     }
                     HStack(spacing: 8) {
                         StatusChip(
@@ -510,13 +510,21 @@ private struct StorageEntryRow: View {
 
     private var detailText: String {
         if entry.isPackage {
-            return String(localized: "Package · \(entry.fileCount) files")
+            return String(localized: "Package · \(Self.fileCountLabel(entry.fileCount))")
         }
         if entry.isDirectory {
             let childFolderCount = max(0, entry.directoryCount - 1)
-            return String(localized: "\(entry.fileCount) files · \(childFolderCount) folders")
+            return "\(Self.fileCountLabel(entry.fileCount)) · \(Self.folderCountLabel(childFolderCount))"
         }
         return String(localized: "File")
+    }
+
+    static func fileCountLabel(_ count: Int) -> String {
+        count == 1 ? String(localized: "1 file") : String(localized: "\(count) files")
+    }
+
+    static func folderCountLabel(_ count: Int) -> String {
+        count == 1 ? String(localized: "1 folder") : String(localized: "\(count) folders")
     }
 
     private static func format(_ bytes: Int64) -> String {

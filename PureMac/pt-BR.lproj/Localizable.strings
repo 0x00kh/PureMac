@@ -103,6 +103,8 @@
 
 /* App Files (AppFilesView) */
 "%lld files" = "%lld arquivos";
+"1 folder" = "1 pasta";
+"1 file" = "1 arquivo";
 "Scanning for related files..." = "Buscando arquivos relacionados...";
 "Checking %lld locations..." = "Verificando %lld locais...";
 "No Related Files" = "Sem arquivos relacionados";
@@ -482,11 +484,10 @@
 "%lld areas" = "%lld areas";
 "%lld compared" = "%lld compared";
 "%lld exact copies · %@ each" = "%lld exact copies · %@ each";
-"%lld file(s) could not be removed with administrator privileges. The items may have changed or macOS denied access." = "%lld file(s) could not be removed with administrator privileges. The items may have changed or macOS denied access.";
-"%lld file(s) could not be removed. Check that the items still exist and are not in use." = "%lld file(s) could not be removed. Check that the items still exist and are not in use.";
+"%@ could not be removed with administrator privileges. The items may have changed or macOS denied access." = "%@ could not be removed with administrator privileges. The items may have changed or macOS denied access.";
+"%@ could not be removed. Check that the items still exist and are not in use." = "%@ could not be removed. Check that the items still exist and are not in use.";
 "%lld files totaling %@ were moved. Every protected copy remains in place." = "%lld files totaling %@ were moved. Every protected copy remains in place.";
 "%lld files totaling %@ will be moved to Trash. The protected copy in every group stays in place." = "%lld files totaling %@ will be moved to Trash. The protected copy in every group stays in place.";
-"%lld files · %lld folders" = "%lld files · %lld folders";
 "%lld folders" = "%lld folders";
 "%lld found" = "%lld found";
 "%lld inaccessible" = "%lld inaccessible";
@@ -699,7 +700,7 @@
 "Over 100 MB" = "Over 100 MB";
 "Package" = "Package";
 "Package contents" = "Package contents";
-"Package · %lld files" = "Package · %lld files";
+"Package · %@" = "Package · %@";
 "Partial result" = "Partial result";
 "Partial results" = "Partial results";
 "Performance" = "Performance";

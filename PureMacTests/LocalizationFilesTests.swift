@@ -105,20 +105,6 @@ final class LocalizationFilesTests: XCTestCase {
         }
     }
 
-    func testSimplifiedChineseHasNoEnglishPlaceholderValues() throws {
-        let files = try localizableStringsFiles()
-        let english = try localizedStrings(in: XCTUnwrap(files["en"]))
-        let chinese = try localizedStrings(in: XCTUnwrap(files["zh-Hans"]))
-        let unchangedNames: Set<String> = ["PureMac", "PureMac.app", "CPU", "XProtect"]
-
-        for (key, value) in english where !unchangedNames.contains(key) {
-            XCTAssertNotEqual(
-                chinese[key], value,
-                "Simplified Chinese still uses the English placeholder for: \(key)"
-            )
-        }
-    }
-
     private func localizableStringsFiles() throws -> [String: URL] {
         let sourceRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

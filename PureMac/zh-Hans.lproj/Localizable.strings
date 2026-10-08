@@ -27,7 +27,7 @@
 "%lld%% used" = "已使用 %lld%%";
 "Used" = "已用";
 "Junk" = "垃圾";
-"Purgeable" = "系统可回收";
+"Purgeable" = "可清除";
 "USED" = "已用";
 "SCANNING" = "扫描中";
 "Free Space" = "可用空间";
@@ -47,7 +47,7 @@
 "Without it, most caches and uninstall flows fail." = "缺少权限时，部分缓存和应用文件可能无法处理。";
 "Action" = "操作";
 "Scanning your Mac" = "正在扫描你的 Mac";
-"Currently in: %@" = "当前: %@";
+"Currently in: %@" = "当前：%@";
 "found" = "已发现";
 "Your Mac is clean" = "你的 Mac 很干净";
 "Scan Again" = "重新扫描";
@@ -76,8 +76,8 @@
 "Deselect All" = "取消全选";
 "Largest First" = "最大优先";
 "Smallest First" = "最小优先";
-"Sorted: Largest First" = "排序:最大优先";
-"Sorted: Smallest First" = "排序:最小优先";
+"Sorted: Largest First" = "排序：最大优先";
+"Sorted: Smallest First" = "排序：最小优先";
 "Clean %lld items" = "清理 %lld 项";
 "%lld items · %@" = "%lld 项 · %@";
 "Scanning…" = "扫描中…";
@@ -91,7 +91,7 @@
 "Search apps" = "搜索应用";
 "Refresh" = "刷新";
 "Installed Apps (%lld)" = "已安装应用 (%lld)";
-"Uninstall (%lld files)" = "卸载 (%lld 个文件)";
+"Uninstall (%lld files)" = "卸载（%lld 个文件）";
 "Loading installed apps..." = "正在加载已安装应用...";
 "No Apps Found" = "未找到应用";
 "Could not find any installed applications." = "未能找到任何已安装的应用程序。";
@@ -103,6 +103,8 @@
 
 /* App Files (AppFilesView) */
 "%lld files" = "%lld 个文件";
+"1 folder" = "1 个文件夹";
+"1 file" = "1 个文件";
 "Scanning for related files..." = "正在扫描相关文件...";
 "Checking %lld locations..." = "正在检查 %lld 个位置...";
 "No Related Files" = "没有相关文件";
@@ -139,7 +141,7 @@
 "Full Disk Access" = "完全磁盘访问权限";
 "PureMac needs Full Disk Access to uninstall apps, find leftover files, and clean protected caches." = "PureMac 需要完全磁盘访问权限以卸载应用、查找残留文件并清理受保护的缓存。";
 "We'll guide you through the next steps." = "我们将引导你完成接下来的步骤。";
-"In System Settings, do this:" = "在“系统设置”中执行以下操作:";
+"In System Settings, do this:" = "在“系统设置”中执行以下操作：";
 "Privacy & Security → Full Disk Access" = "隐私与安全性 → 完全磁盘访问权限";
 "Find **PureMac** and turn the toggle on" = "找到 **PureMac** 并打开开关";
 "Authenticate with Touch ID or your password" = "使用触控 ID 或密码进行验证";
@@ -148,7 +150,7 @@
 "Reset permissions and re-prompt" = "重置权限并再次提示";
 "Hide diagnostics" = "隐藏诊断";
 "Show diagnostics" = "显示诊断";
-"Trouble?" = "遇到问题?";
+"Trouble?" = "遇到问题？";
 "Waiting for permission…" = "等待授权…";
 "Permission granted." = "已授予权限。";
 "PureMac can now manage protected files." = "PureMac 现在可以管理受保护的文件。";
@@ -193,7 +195,7 @@
 "Japanese" = "日语";
 "Arabic" = "阿拉伯语";
 "Polish" = "波兰语";
-"Portuguese (Brazil)" = "葡萄牙语(巴西)";
+"Portuguese (Brazil)" = "葡萄牙语（巴西）";
 "Russian" = "俄语";
 "Ukrainian" = "乌克兰语";
 "Chinese (Simplified)" = "简体中文";
@@ -203,8 +205,8 @@
 "File Discovery" = "文件发现";
 "Skip hidden files during scan" = "扫描时跳过隐藏文件";
 "Large Files" = "大文件";
-"Minimum size: %lld MB" = "最小大小: %lld MB";
-"Files older than: %lld months" = "早于: %lld 个月的文件";
+"Minimum size: %lld MB" = "最小大小：%lld MB";
+"Files older than: %lld months" = "早于：%lld 个月的文件";
 "Automatic Scanning" = "自动扫描";
 "Enable scheduled scanning" = "启用计划扫描";
 "Scan interval" = "扫描间隔";
@@ -227,7 +229,7 @@
 "Mail Files" = "邮件文件";
 "Trash Bins" = "废纸篓";
 "Large & Old Files" = "大文件和旧文件";
-"Purgeable Space" = "系统可回收空间";
+"Purgeable Space" = "可清除空间";
 "Xcode Junk" = "Xcode 垃圾";
 "Brew Cache" = "Brew 缓存";
 "Node Cache" = "Node 缓存";
@@ -482,11 +484,10 @@
 "%lld areas" = "%lld 个扫描类别";
 "%lld compared" = "已比较 %lld 张";
 "%lld exact copies · %@ each" = "%lld 个相同副本，每个 %@";
-"%lld file(s) could not be removed with administrator privileges. The items may have changed or macOS denied access." = "使用管理员权限仍无法删除 %lld 个文件。文件可能已发生变化，或 macOS 拒绝了访问。";
-"%lld file(s) could not be removed. Check that the items still exist and are not in use." = "无法删除 %lld 个文件。请确认文件仍然存在且未被占用。";
+"%@ could not be removed with administrator privileges. The items may have changed or macOS denied access." = "使用管理员权限仍无法删除 %@。文件可能已发生变化，或 macOS 拒绝了访问。";
+"%@ could not be removed. Check that the items still exist and are not in use." = "无法删除 %@。请确认文件仍然存在且未被占用。";
 "%lld files totaling %@ were moved. Every protected copy remains in place." = "已将 %lld 个文件（共 %@）移到废纸篓。所有受保护的副本均已保留。";
 "%lld files totaling %@ will be moved to Trash. The protected copy in every group stays in place." = "将把 %lld 个文件（共 %@）移到废纸篓。每组中受保护的副本都会保留。";
-"%lld files · %lld folders" = "%lld 个文件，%lld 个文件夹";
 "%lld folders" = "%lld 个文件夹";
 "%lld found" = "发现 %lld 项";
 "%lld inaccessible" = "%lld 项无法访问";
@@ -682,9 +683,9 @@
 "Nothing to clean" = "无需清理";
 "Nothing was moved" = "未移动任何文件";
 "Off" = "已关闭";
-"Older than 30 days" = "30 天前";
-"Older than 6 months" = "6 个月前";
-"Older than a year" = "1 年前";
+"Older than 30 days" = "超过 30 天";
+"Older than 6 months" = "超过 6 个月";
+"Older than a year" = "超过一年";
 "Oldest first" = "最早修改优先";
 "On" = "已开启";
 "Open Activity Monitor" = "打开活动监视器";
@@ -699,7 +700,7 @@
 "Over 100 MB" = "大于 100 MB";
 "Package" = "文件包";
 "Package contents" = "文件包内容";
-"Package · %lld files" = "文件包，含 %lld 个文件";
+"Package · %@" = "文件包，含 %@";
 "Partial result" = "结果不完整";
 "Partial results" = "部分扫描结果";
 "Performance" = "性能监测";

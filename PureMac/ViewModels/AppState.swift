@@ -462,21 +462,25 @@ final class AppState: ObservableObject {
         adminError: String?
     ) -> String? {
         if needsFullDiskAccess {
-            let prefix = failed.isEmpty ? String(localized: "Some selected files") : String(localized: "\(failed.count) files")
+            let prefix = failed.isEmpty ? String(localized: "Some selected files") : Self.fileCountLabel(failed.count)
             return String(localized: "\(prefix) could not be removed because PureMac does not have Full Disk Access. Grant Full Disk Access in System Settings, then try again.")
         }
 
         if !failed.isEmpty {
             if attemptedAdmin {
-                return String(localized: "\(failed.count) file(s) could not be removed with administrator privileges. The items may have changed or macOS denied access.")
+                return String(localized: "\(Self.fileCountLabel(failed.count)) could not be removed with administrator privileges. The items may have changed or macOS denied access.")
             }
-            return String(localized: "\(failed.count) file(s) could not be removed. Check that the items still exist and are not in use.")
+            return String(localized: "\(Self.fileCountLabel(failed.count)) could not be removed. Check that the items still exist and are not in use.")
         }
 
         if let adminError, !adminError.isEmpty {
             return String(localized: "Administrator removal failed: \(adminError)")
         }
         return nil
+    }
+
+    private static func fileCountLabel(_ count: Int) -> String {
+        count == 1 ? String(localized: "1 file") : String(localized: "\(count) files")
     }
 
     private nonisolated static func isMissingFileError(_ nsError: NSError) -> Bool {
