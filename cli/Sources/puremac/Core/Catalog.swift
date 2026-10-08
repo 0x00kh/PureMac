@@ -72,6 +72,7 @@ enum Catalog {
             Target(tool: "Ollama (logs/cache)", paths: [h(".ollama/logs"), h("Library/Caches/ollama"), h("Library/Caches/com.electron.ollama")]),
             Target(tool: "LM Studio (logs)", paths: [h(".lmstudio/server-logs")]),
             Target(tool: "Cursor (cache)", paths: [h("Library/Application Support/Cursor/Cache"), h("Library/Application Support/Cursor/CachedData"), h("Library/Application Support/Cursor/logs")]),
+            Target(tool: "Hugging Face (~/.cache/huggingface downloads, re-fetched on demand)", paths: [h(".cache/huggingface/hub"), h(".cache/huggingface/datasets"), h(".cache/huggingface/xet")], selectedByDefault: false),
         ]
     }
 
