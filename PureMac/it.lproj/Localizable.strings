@@ -873,6 +873,7 @@
 "tmutil is not available on this Mac." = "tmutil non è disponibile su questo Mac.";
 
 /* Additional interface strings. */
+"%lld processes" = "%lld processi";
 "1 process" = "1 processo";
 "A PureMac update is available" = "È disponibile un aggiornamento di PureMac";
 "About these readings" = "Informazioni sui valori rilevati";
@@ -915,8 +916,10 @@
 "Settings to review" = "Impostazioni da controllare";
 "Show all apps and processes" = "Mostra tutte le app e i processi";
 "Show top 8" = "Mostra i primi 8";
-"Some protected or changing processes could not be measured." = "Non è stato possibile rilevare i dati di alcuni processi protetti o in fase di modifica.";
+"Some of this app's processes have no CPU reading yet, so this total is partial." = "Some of this app's processes have no CPU reading yet, so this total is partial.";
+"Some processes started or stopped since the last sample. Their values appear in the next one." = "Some processes started or stopped since the last sample. Their values appear in the next one.";
 "Sort by" = "Ordina per";
+"System processes are not listed. Use Activity Monitor for those." = "System processes are not listed. Use Activity Monitor for those.";
 "The release service is unavailable. Please try again later." = "Il servizio delle versioni non è disponibile. Riprova più tardi.";
 "This build has no readable version. Open the releases page to check manually." = "Non è possibile leggere la versione di questa build. Apri la pagina delle versioni per verificare manualmente.";
 "To update with Homebrew, run this command in Terminal. The cask may follow the GitHub release a little later." = "Per aggiornare con Homebrew, esegui questo comando nel Terminale. Il cask potrebbe essere aggiornato poco dopo la pubblicazione della versione su GitHub.";
