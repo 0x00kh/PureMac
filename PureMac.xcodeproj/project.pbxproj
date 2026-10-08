@@ -10,8 +10,8 @@
 		013EF7B96BF046D4DB38FBC5 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 241E0895B09C71AB423B2F9E /* Localizable.strings */; };
 		0BB6BC2EAFB02407FBC6CDA6 /* ApplicationUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59873E44B520DE069F80CCD6 /* ApplicationUpdater.swift */; };
 		0CC9A41781D1B1883279693E /* ProtectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F270D47D1DD94D4577482B90 /* ProtectionView.swift */; };
-		10959A68B277AEF7D2442C48 /* StorageExplorerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B8E84105970F69BBAB638F /* StorageExplorerTests.swift */; };
 		0E0A5149C01BA4B013F85E2D /* XcodeBuildMCPDerivedDataSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FC5F44AB9CA4CD2DE774973 /* XcodeBuildMCPDerivedDataSupport.swift */; };
+		10959A68B277AEF7D2442C48 /* StorageExplorerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B8E84105970F69BBAB638F /* StorageExplorerTests.swift */; };
 		1B0D043102FDB245312A5147 /* AppFilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 798B80977D14647A5691B0A0 /* AppFilesView.swift */; };
 		2253F11BDF561B617439C96B /* FullDiskAccessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E866A1541D289C69144A5E62 /* FullDiskAccessManager.swift */; };
 		25E2304A3FF257F1740E304B /* FileProtection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7953B398E47A4C603DE287F1 /* FileProtection.swift */; };
@@ -66,6 +66,7 @@
 		B928E4369A3FC4369F014A29 /* SmartCareCoreArtwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA389C4F50505795FB31A51 /* SmartCareCoreArtwork.swift */; };
 		BB10A9AFDA394F918E068351 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = B55B1419D88851567DFB783A /* InfoPlist.strings */; };
 		BC6C800216343438413349A3 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D4FD34378988D430A582ED0 /* OnboardingView.swift */; };
+		BF1DAD05E70EB1AE0103BFEA /* XcodeBuildMCPDerivedDataSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F5D30AEC87F2213C8D59AD /* XcodeBuildMCPDerivedDataSupportTests.swift */; };
 		C85B54037A5989A85968F328 /* AppUpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0AF1B9C42A20B6C9FC2DD9 /* AppUpdatesView.swift */; };
 		CDCDFEBA39A3290101F86AC6 /* MainWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F510F232341EE18F11DC934 /* MainWindow.swift */; };
 		CFA64F54CDBF8A4765E0068D /* LocalizationFilesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 155CE1B8CDCCCA6F9FD028C1 /* LocalizationFilesTests.swift */; };
@@ -108,6 +109,7 @@
 		022D0EAEE2B6E54069FC2CBE /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
 		02E502E2B5C6AECC76E5CFEF /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		043F28E28FB7B2D9E39E5F70 /* PerformanceInspectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceInspectorTests.swift; sourceTree = "<group>"; };
+		04F5D30AEC87F2213C8D59AD /* XcodeBuildMCPDerivedDataSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XcodeBuildMCPDerivedDataSupportTests.swift; sourceTree = "<group>"; };
 		069AAE87E3F9EDE5593AD8B3 /* PermissionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionSheet.swift; sourceTree = "<group>"; };
 		089D484A0482787027665936 /* DuplicateFinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateFinder.swift; sourceTree = "<group>"; };
 		08C60E04A0CA3F227816DB63 /* DashboardCharts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardCharts.swift; sourceTree = "<group>"; };
@@ -118,8 +120,8 @@
 		1AB003A7751F05727DBFD1A5 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		1C0D9A6F75D0B8ADDB32FC2A /* uk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = uk; path = uk.lproj/Localizable.strings; sourceTree = "<group>"; };
 		1D3AC5F17D7CA94FAB1E8D7A /* StringNormalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringNormalization.swift; sourceTree = "<group>"; };
-		22B679C0120F1E3DDCB27FE2 /* CleaningEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleaningEngineTests.swift; sourceTree = "<group>"; };
 		1FC5F44AB9CA4CD2DE774973 /* XcodeBuildMCPDerivedDataSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XcodeBuildMCPDerivedDataSupport.swift; sourceTree = "<group>"; };
+		22B679C0120F1E3DDCB27FE2 /* CleaningEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleaningEngineTests.swift; sourceTree = "<group>"; };
 		231FF7CBB5F621B66F2AB8A5 /* FDADemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FDADemoView.swift; sourceTree = "<group>"; };
 		23486A54A82EE3865B784D1C /* AppInfoFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInfoFetcher.swift; sourceTree = "<group>"; };
 		25D1CF5248C1D471BCBD212F /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/ServicesMenu.strings; sourceTree = "<group>"; };
@@ -248,6 +250,7 @@
 				C7D81BE7EA5DB17F4A0300AD /* SimulatorRuntimeSupportTests.swift */,
 				78B8E84105970F69BBAB638F /* StorageExplorerTests.swift */,
 				55CE234DB2DB54ED53A4EFD6 /* ThemeManagerTests.swift */,
+				04F5D30AEC87F2213C8D59AD /* XcodeBuildMCPDerivedDataSupportTests.swift */,
 			);
 			path = PureMacTests;
 			sourceTree = "<group>";
@@ -648,6 +651,7 @@
 				F4F02F966001A1504C2B4D33 /* SimulatorRuntimeSupportTests.swift in Sources */,
 				10959A68B277AEF7D2442C48 /* StorageExplorerTests.swift in Sources */,
 				ABE3B80279483DB90B8EC1BC /* ThemeManagerTests.swift in Sources */,
+				BF1DAD05E70EB1AE0103BFEA /* XcodeBuildMCPDerivedDataSupportTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
