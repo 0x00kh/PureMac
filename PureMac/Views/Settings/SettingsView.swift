@@ -29,26 +29,30 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            HStack(spacing: 14) {
-                IconTile(systemName: "gearshape.fill", tint: Tint.accent, size: 44, corner: 12)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Settings")
-                        .font(.system(size: 26, weight: .bold))
-                    Text("Make PureMac work your way.")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
+            // The standard Settings window already carries the title; only the
+            // sidebar page repeats it as a header.
+            if !standalone {
+                HStack(spacing: 14) {
+                    IconTile(systemName: "gearshape.fill", tint: Tint.accent, size: 44, corner: 12)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Settings")
+                            .font(.system(size: 26, weight: .bold))
+                        Text("Make PureMac work your way.")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 3) {
+                        Text(String(format: String(localized: "Version %@"), UpdateService.installedVersion))
+                        Text(String(format: String(localized: "Build %@"), UpdateService.installedBuild))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
                 }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 3) {
-                    Text(String(format: String(localized: "Version %@"), UpdateService.installedVersion))
-                    Text(String(format: String(localized: "Build %@"), UpdateService.installedBuild))
-                        .foregroundStyle(.tertiary)
-                }
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .textSelection(.enabled)
+                .padding(.horizontal, 4)
             }
-            .padding(.horizontal, 4)
 
             Picker("Settings", selection: $selectedTab) {
                 ForEach(SettingsTab.allCases) { tab in

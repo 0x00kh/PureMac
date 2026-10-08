@@ -49,15 +49,18 @@ struct ProcessResourcesView: View {
             .padding(9)
             .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 8))
 
+            // Pausing keeps the last sample on screen under the notice.
             if !isActive {
                 Label("Live updates paused", systemImage: "pause.circle")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
-            } else if monitor.samplingFailed {
+            }
+
+            if isActive && monitor.samplingFailed {
                 Label("Process information is unavailable. Try Activity Monitor for more detail.", systemImage: "exclamationmark.triangle")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
-            } else if monitor.consumers.isEmpty && monitor.isWarmingUp {
+            } else if isActive && monitor.consumers.isEmpty && monitor.isWarmingUp {
                 HStack(spacing: 9) {
                     ProgressView().controlSize(.small)
                     Text("Measuring apps and processes…")
@@ -66,10 +69,12 @@ struct ProcessResourcesView: View {
                 }
                 .padding(.vertical, 10)
             } else if visibleConsumers.isEmpty {
-                Text("No matching apps or processes")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 10)
+                if isActive || !monitor.consumers.isEmpty {
+                    Text("No matching apps or processes")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 10)
+                }
             } else {
                 HStack {
                     Text("Name")
@@ -103,9 +108,11 @@ struct ProcessResourcesView: View {
                 if isActive && monitor.isWarmingUp && !monitor.samplingFailed {
                     Text("CPU values appear after the next sample.")
                 }
-                if monitor.unavailableProcessCount > 0 {
-                    Text("Some protected or changing processes could not be measured.")
-                        .foregroundStyle(Tint.orange)
+                if isActive && monitor.changedProcessCount > 0 {
+                    Text("Some processes started or stopped since the last sample. Their values appear in the next one.")
+                }
+                if monitor.protectedProcessCount > 0 {
+                    Text("System processes are not listed. Use Activity Monitor for those.")
                 }
             }
             .font(.system(size: 10.5))
@@ -171,8 +178,10 @@ private struct ProcessResourceRow: View {
             .help(consumer.applicationPath ?? consumer.name)
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 5) {
-                Text(consumer.cpuFraction.map { $0.formatted(.percent.precision(.fractionLength(1))) } ?? "—")
+                Text(cpuText)
                     .monospacedDigit()
+                    .help(consumer.cpuIsPartial && consumer.cpuFraction != nil
+                          ? String(localized: "Some of this app's processes have no CPU reading yet, so this total is partial.") : "")
                 ProgressView(value: consumer.cpuFraction ?? 0)
                     .tint(Tint.accent)
                     .accessibilityHidden(true)
@@ -190,5 +199,12 @@ private struct ProcessResourceRow: View {
         .font(.system(size: 11.5, weight: .medium, design: .rounded))
         .padding(.vertical, 10)
         .accessibilityElement(children: .combine)
+    }
+
+    /// A trailing plus marks a group whose CPU is the sum of its measured members only.
+    private var cpuText: String {
+        guard let cpu = consumer.cpuFraction else { return "—" }
+        let value = cpu.formatted(.percent.precision(.fractionLength(1)))
+        return consumer.cpuIsPartial ? value + "+" : value
     }
 }

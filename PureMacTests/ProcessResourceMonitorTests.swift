@@ -52,16 +52,33 @@ final class ProcessResourceMonitorTests: XCTestCase {
         XCTAssertEqual(app.processCount, 2)
         XCTAssertEqual(app.residentBytes, 500)
         XCTAssertEqual(try XCTUnwrap(app.cpuFraction), 0.25, accuracy: 0.0001)
+        XCTAssertFalse(app.cpuIsPartial)
     }
 
-    func testUnknownPathsRemainDistinctAndNewHelperRequiresWarmup() throws {
+    func testUnknownPathsRemainDistinctAndNewHelperKeepsKnownCPUAsPartial() throws {
         let first = reading(path: "")
         let second = reading(pid: 43, path: "")
         XCTAssertEqual(ProcessResourceMath.consumers(readings: [first, second], previous: [:], processorCount: 8).count, 2)
         let before = reading(cpu: 100)
-        let result = ProcessResourceMath.consumers(readings: [reading(cpu: 600, time: 2_000_000_000), reading(pid: 43)], previous: [before.identity: before], processorCount: 8)
+        let helper = reading(pid: 43, path: "/Applications/Example.app/Contents/MacOS/Helper", time: 2_000_000_000)
+        let result = ProcessResourceMath.consumers(readings: [reading(cpu: 500_000_100, time: 2_000_000_000), helper], previous: [before.identity: before], processorCount: 4)
         XCTAssertEqual(result.count, 1)
-        XCTAssertNil(try XCTUnwrap(result.first).cpuFraction)
+        let group = try XCTUnwrap(result.first)
+        XCTAssertEqual(group.processCount, 2)
+        XCTAssertEqual(try XCTUnwrap(group.cpuFraction), 0.125, accuracy: 0.0001, "The measured member still counts")
+        XCTAssertTrue(group.cpuIsPartial)
+        let fresh = ProcessResourceMath.consumers(readings: [helper, reading(time: 2_000_000_000)], previous: [:], processorCount: 4)
+        XCTAssertNil(try XCTUnwrap(fresh.first).cpuFraction, "A group with no measured member stays unknown")
+        XCTAssertTrue(try XCTUnwrap(fresh.first).cpuIsPartial)
+    }
+
+    func testChangedProcessCountSeesStartsAndStopsButNotTheFirstSample() {
+        let a = reading(pid: 1), b = reading(pid: 2), c = reading(pid: 3)
+        XCTAssertEqual(ProcessResourceMath.changedProcessCount(readings: [a, b], previous: [:]), 0)
+        let previous = [a.identity: a, b.identity: b]
+        XCTAssertEqual(ProcessResourceMath.changedProcessCount(readings: [a, b], previous: previous), 0)
+        XCTAssertEqual(ProcessResourceMath.changedProcessCount(readings: [a, c], previous: previous), 2)
+        XCTAssertEqual(ProcessResourceMath.changedProcessCount(readings: [reading(pid: 2, start: 101)], previous: previous), 3)
     }
 
     func testSortingAndSearchKeepMeasuredConsumersFirstAndUseStableTies() {

@@ -47,17 +47,22 @@ final class MonitoringLifecycleTests: XCTestCase {
         XCTAssertEqual(samples, stoppedCount)
     }
 
-    func testProcessMonitorStopsAndReleasesItsVisibleData() async throws {
+    func testPausingKeepsTheLastSampleAndResumingResetsTheBaseline() async throws {
         let monitor = ProcessResourceMonitor()
         monitor.setActive(true)
         for _ in 0..<100 where monitor.consumers.isEmpty {
             try await Task.sleep(nanoseconds: 20_000_000)
         }
         XCTAssertFalse(monitor.consumers.isEmpty, "Native read-only sample should include this test host")
+        let shown = monitor.consumers.map(\.id)
         monitor.setActive(false)
         XCTAssertFalse(monitor.isSampling)
-        XCTAssertTrue(monitor.consumers.isEmpty)
+        XCTAssertEqual(monitor.consumers.map(\.id), shown, "Pausing keeps the last sample on screen")
         try await Task.sleep(nanoseconds: 100_000_000)
-        XCTAssertTrue(monitor.consumers.isEmpty, "Cancelled work must not publish after hiding")
+        XCTAssertEqual(monitor.consumers.map(\.id), shown, "Cancelled work must not publish after pausing")
+        monitor.setActive(true)
+        XCTAssertTrue(monitor.isWarmingUp, "Resuming starts from a fresh baseline")
+        XCTAssertEqual(monitor.consumers.map(\.id), shown, "The last sample stays until the next one arrives")
+        monitor.setActive(false)
     }
 }
