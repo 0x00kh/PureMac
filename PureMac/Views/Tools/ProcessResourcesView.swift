@@ -178,8 +178,10 @@ private struct ProcessResourceRow: View {
             .help(consumer.applicationPath ?? consumer.name)
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 5) {
-                Text(consumer.cpuFraction.map { $0.formatted(.percent.precision(.fractionLength(1))) } ?? "—")
+                Text(cpuText)
                     .monospacedDigit()
+                    .help(consumer.cpuIsPartial && consumer.cpuFraction != nil
+                          ? String(localized: "Some of this app's processes have no CPU reading yet, so this total is partial.") : "")
                 ProgressView(value: consumer.cpuFraction ?? 0)
                     .tint(Tint.accent)
                     .accessibilityHidden(true)
@@ -197,5 +199,12 @@ private struct ProcessResourceRow: View {
         .font(.system(size: 11.5, weight: .medium, design: .rounded))
         .padding(.vertical, 10)
         .accessibilityElement(children: .combine)
+    }
+
+    /// A trailing plus marks a group whose CPU is the sum of its measured members only.
+    private var cpuText: String {
+        guard let cpu = consumer.cpuFraction else { return "—" }
+        let value = cpu.formatted(.percent.precision(.fractionLength(1)))
+        return consumer.cpuIsPartial ? value + "+" : value
     }
 }

@@ -910,6 +910,7 @@
 "Settings to review" = "Settings to review";
 "Show all apps and processes" = "Show all apps and processes";
 "Show top 8" = "Show top 8";
+"Some of this app's processes have no CPU reading yet, so this total is partial." = "Some of this app's processes have no CPU reading yet, so this total is partial.";
 "Some processes started or stopped since the last sample. Their values appear in the next one." = "Some processes started or stopped since the last sample. Their values appear in the next one.";
 "Sort by" = "Sort by";
 "System processes are not listed. Use Activity Monitor for those." = "System processes are not listed. Use Activity Monitor for those.";

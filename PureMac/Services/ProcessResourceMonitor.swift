@@ -9,6 +9,9 @@ struct ProcessResourceConsumer: Identifiable, Sendable {
     var cpuFraction: Double?
     var residentBytes: UInt64
     var processCount: Int
+    /// A member without an interval yet (new process or recycled PID) leaves
+    /// the group's CPU as the sum of its measured members only.
+    var cpuIsPartial = false
 }
 
 enum ProcessResourceSort: String, CaseIterable, Identifiable {
@@ -65,18 +68,18 @@ enum ProcessResourceMath {
                 group.residentBytes = group.residentBytes.addingReportingOverflow(reading.residentBytes).overflow
                     ? UInt64.max : group.residentBytes + reading.residentBytes
                 group.processCount += 1
-                // Any unknown member means this group's first interval is incomplete.
-                if let total = group.cpuFraction, let cpu {
-                    group.cpuFraction = min(1, total + cpu)
+                if let cpu {
+                    group.cpuFraction = min(1, (group.cpuFraction ?? 0) + cpu)
                 } else {
-                    group.cpuFraction = nil
+                    group.cpuIsPartial = true
                 }
                 groups[id] = group
             } else {
                 let name = application.map { URL(fileURLWithPath: $0).deletingPathExtension().lastPathComponent }
                     ?? reading.name
                 groups[id] = ProcessResourceConsumer(id: id, name: name, applicationPath: application,
-                                                     cpuFraction: cpu, residentBytes: reading.residentBytes, processCount: 1)
+                                                     cpuFraction: cpu, residentBytes: reading.residentBytes, processCount: 1,
+                                                     cpuIsPartial: cpu == nil)
             }
         }
         return Array(groups.values)
