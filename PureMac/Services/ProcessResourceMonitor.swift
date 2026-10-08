@@ -82,6 +82,16 @@ enum ProcessResourceMath {
         return Array(groups.values)
     }
 
+    /// Processes that started or stopped since the previous sample. The first
+    /// sample has no baseline, so nothing counts as changed yet.
+    static func changedProcessCount(readings: [ProcessResourceReading], previous: [String: ProcessResourceReading]) -> Int {
+        guard !previous.isEmpty else { return 0 }
+        let current = Set(readings.map(\.identity))
+        let started = current.subtracting(previous.keys).count
+        let stopped = previous.keys.filter { !current.contains($0) }.count
+        return started + stopped
+    }
+
     static func sorted(_ consumers: [ProcessResourceConsumer], by sort: ProcessResourceSort, search: String = "") -> [ProcessResourceConsumer] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         return consumers.filter { query.isEmpty || $0.name.localizedStandardContains(query) }.sorted {
@@ -100,7 +110,8 @@ enum ProcessResourceMath {
 
 private struct ProcessResourceSample: Sendable {
     let consumers: [ProcessResourceConsumer]
-    let unavailableProcessCount: Int
+    let protectedProcessCount: Int
+    let changedProcessCount: Int
     let failed: Bool
     let warmingUp: Bool
 }
@@ -121,7 +132,7 @@ private actor ProcessResourceSampler {
         let estimate = proc_listallpids(nil, 0)
         guard estimate > 0 else {
             previous.removeAll()
-            return ProcessResourceSample(consumers: [], unavailableProcessCount: 0, failed: true, warmingUp: true)
+            return ProcessResourceSample(consumers: [], protectedProcessCount: 0, changedProcessCount: 0, failed: true, warmingUp: true)
         }
         // Headroom accommodates processes created between enumeration calls.
         var pids = [Int32](repeating: 0, count: Int(estimate) + 256)
@@ -129,18 +140,20 @@ private actor ProcessResourceSampler {
         let count = pids.withUnsafeMutableBytes { proc_listallpids($0.baseAddress, capacityBytes) }
         guard count > 0 else {
             previous.removeAll()
-            return ProcessResourceSample(consumers: [], unavailableProcessCount: 0, failed: true, warmingUp: true)
+            return ProcessResourceSample(consumers: [], protectedProcessCount: 0, changedProcessCount: 0, failed: true, warmingUp: true)
         }
         var readings: [ProcessResourceReading] = []
-        var unavailable = Int(count) >= pids.count ? 1 : 0
+        var protectedCount = 0
+        var churn = Int(count) >= pids.count ? 1 : 0
         for pid in pids.prefix(min(Int(count), pids.count)) where pid > 0 {
             if Task.isCancelled { break }
             var info = proc_taskallinfo()
             let size = Int32(MemoryLayout<proc_taskallinfo>.stride)
             errno = 0
             guard proc_pidinfo(pid, PROC_PIDTASKALLINFO, 0, &info, size) == size else {
-                // An exited process is normal churn, not a permission failure.
-                if errno != ESRCH { unavailable += 1 }
+                // Another user's process is a permission limit; anything else is
+                // a process that exited or changed under us and is churn.
+                if errno == EPERM { protectedCount += 1 } else { churn += 1 }
                 continue
             }
             // Re-read the path: exec can change the executable without changing
@@ -161,16 +174,18 @@ private actor ProcessResourceSampler {
         let consumers = ProcessResourceMath.consumers(readings: readings, previous: previous,
                                                       processorCount: ProcessInfo.processInfo.activeProcessorCount,
                                                       nanosecondsPerTick: nanosecondsPerTick)
+        let changed = warmingUp ? 0 : churn + ProcessResourceMath.changedProcessCount(readings: readings, previous: previous)
         previous = Dictionary(uniqueKeysWithValues: readings.map { ($0.identity, $0) })
-        return ProcessResourceSample(consumers: consumers, unavailableProcessCount: unavailable,
-                                     failed: readings.isEmpty, warmingUp: warmingUp)
+        return ProcessResourceSample(consumers: consumers, protectedProcessCount: protectedCount,
+                                     changedProcessCount: changed, failed: readings.isEmpty, warmingUp: warmingUp)
     }
 }
 
 @MainActor
 final class ProcessResourceMonitor: ObservableObject {
     @Published private(set) var consumers: [ProcessResourceConsumer] = []
-    @Published private(set) var unavailableProcessCount = 0
+    @Published private(set) var protectedProcessCount = 0
+    @Published private(set) var changedProcessCount = 0
     @Published private(set) var isWarmingUp = true
     @Published private(set) var isSampling = false
     @Published private(set) var samplingFailed = false
@@ -190,7 +205,8 @@ final class ProcessResourceMonitor: ObservableObject {
         consumers = []
         icons.removeAll()
         names.removeAll()
-        unavailableProcessCount = 0
+        protectedProcessCount = 0
+        changedProcessCount = 0
         isWarmingUp = true
         samplingFailed = false
         guard active else { return }
@@ -230,7 +246,8 @@ final class ProcessResourceMonitor: ObservableObject {
             }
             return consumer
         }
-        unavailableProcessCount = sample.unavailableProcessCount
+        protectedProcessCount = sample.protectedProcessCount
+        changedProcessCount = sample.changedProcessCount
         samplingFailed = sample.failed
         isWarmingUp = sample.warmingUp
     }

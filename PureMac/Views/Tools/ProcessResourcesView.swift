@@ -103,9 +103,11 @@ struct ProcessResourcesView: View {
                 if isActive && monitor.isWarmingUp && !monitor.samplingFailed {
                     Text("CPU values appear after the next sample.")
                 }
-                if monitor.unavailableProcessCount > 0 {
-                    Text("Some protected or changing processes could not be measured.")
-                        .foregroundStyle(Tint.orange)
+                if isActive && monitor.changedProcessCount > 0 {
+                    Text("Some processes started or stopped since the last sample. Their values appear in the next one.")
+                }
+                if monitor.protectedProcessCount > 0 {
+                    Text("System processes are not listed. Use Activity Monitor for those.")
                 }
             }
             .font(.system(size: 10.5))

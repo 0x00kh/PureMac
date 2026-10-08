@@ -64,6 +64,15 @@ final class ProcessResourceMonitorTests: XCTestCase {
         XCTAssertNil(try XCTUnwrap(result.first).cpuFraction)
     }
 
+    func testChangedProcessCountSeesStartsAndStopsButNotTheFirstSample() {
+        let a = reading(pid: 1), b = reading(pid: 2), c = reading(pid: 3)
+        XCTAssertEqual(ProcessResourceMath.changedProcessCount(readings: [a, b], previous: [:]), 0)
+        let previous = [a.identity: a, b.identity: b]
+        XCTAssertEqual(ProcessResourceMath.changedProcessCount(readings: [a, b], previous: previous), 0)
+        XCTAssertEqual(ProcessResourceMath.changedProcessCount(readings: [a, c], previous: previous), 2)
+        XCTAssertEqual(ProcessResourceMath.changedProcessCount(readings: [reading(pid: 2, start: 101)], previous: previous), 3)
+    }
+
     func testSortingAndSearchKeepMeasuredConsumersFirstAndUseStableTies() {
         let a = ProcessResourceConsumer(id: "a", name: "Browser", applicationPath: nil, cpuFraction: 0.5, residentBytes: 100, processCount: 1)
         let b = ProcessResourceConsumer(id: "b", name: "Editor", applicationPath: nil, cpuFraction: 0.1, residentBytes: 500, processCount: 1)

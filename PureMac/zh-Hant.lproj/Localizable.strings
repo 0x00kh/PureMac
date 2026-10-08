@@ -914,8 +914,9 @@
 "Settings to review" = "Settings to review";
 "Show all apps and processes" = "Show all apps and processes";
 "Show top 8" = "Show top 8";
-"Some protected or changing processes could not be measured." = "Some protected or changing processes could not be measured.";
+"Some processes started or stopped since the last sample. Their values appear in the next one." = "Some processes started or stopped since the last sample. Their values appear in the next one.";
 "Sort by" = "Sort by";
+"System processes are not listed. Use Activity Monitor for those." = "System processes are not listed. Use Activity Monitor for those.";
 "The release service is unavailable. Please try again later." = "The release service is unavailable. Please try again later.";
 "This build has no readable version. Open the releases page to check manually." = "This build has no readable version. Open the releases page to check manually.";
 "To update with Homebrew, run this command in Terminal. The cask may follow the GitHub release a little later." = "To update with Homebrew, run this command in Terminal. The cask may follow the GitHub release a little later.";
