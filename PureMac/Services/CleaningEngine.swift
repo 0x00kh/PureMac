@@ -202,8 +202,8 @@ actor CleaningEngine {
                     // cleanup. XcodeBuildMCP DerivedData must not be unlinked.
                     var resulting: NSURL?
                     try fileManager.trashItem(at: resolvedURL, resultingItemURL: &resulting)
-                    if let resulting {
-                        result.trashedPaths.insert(resulting.path ?? "")
+                    if let trashedPath = resulting?.path {
+                        result.trashedPaths.insert(trashedPath)
                     }
                 } else {
                     try fileManager.removeItem(at: itemURL)
@@ -593,13 +593,6 @@ actor CleaningEngine {
     /// deletions can still happen through the explicit per-item flow.
     private func isSafeToDelete(resolvedPath: String) -> Bool {
         let home = homeDirectory.path
-        if XcodeBuildMCPDerivedDataSupport.isManagedDerivedDataPath(
-            resolvedPath,
-            homeDirectory: homeDirectory
-        ) {
-            return true
-        }
-
         // Cloud File Provider state is never deletable, whatever category asked
         // and whichever allowed root it happens to sit under (issue #142).
         // Checked before the allowlist because several provider directories live

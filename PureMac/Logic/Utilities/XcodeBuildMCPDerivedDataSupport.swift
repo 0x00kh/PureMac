@@ -316,5 +316,3 @@ enum XcodeBuildMCPDerivedDataSupport {
         )
     }
 }
-
-typealias XcodeBuildMCPStorage = XcodeBuildMCPDerivedDataSupport
