@@ -14,6 +14,7 @@ enum AppSection: Hashable {
     case protection
     case performance
     case appUpdates
+    case settings
     case cleaning(CleaningCategory)
 }
 
@@ -47,6 +48,9 @@ final class ScanProgressTicker: ObservableObject {
 
 @MainActor
 final class AppState: ObservableObject {
+    let languageAtLaunch = AppLanguage.current
+    @Published var settingsNeedLanguageRestart = false
+    @Published var showUpdateSettings = false
     typealias AppFileScanner = @MainActor (
         _ app: InstalledApp,
         _ locations: Locations,
@@ -307,7 +311,7 @@ final class AppState: ObservableObject {
         }
         guard !urls.isEmpty else {
             if !blocked.isEmpty {
-                removalError = "Refused to delete \(blocked.count) protected item(s) (home credential directory or similar)."
+                removalError = String(localized: "Refused to delete \(blocked.count) protected item(s) (home credential directory or similar).")
             }
             return
         }
@@ -462,21 +466,25 @@ final class AppState: ObservableObject {
         adminError: String?
     ) -> String? {
         if needsFullDiskAccess {
-            let prefix = failed.isEmpty ? "Some selected files" : "\(failed.count) file\(failed.count == 1 ? "" : "s")"
-            return "\(prefix) could not be removed because PureMac does not have Full Disk Access. Grant Full Disk Access in System Settings, then try again."
+            let prefix = failed.isEmpty ? String(localized: "Some selected files") : Self.fileCountLabel(failed.count)
+            return String(localized: "\(prefix) could not be removed because PureMac does not have Full Disk Access. Grant Full Disk Access in System Settings, then try again.")
         }
 
         if !failed.isEmpty {
             if attemptedAdmin {
-                return "\(failed.count) file\(failed.count == 1 ? "" : "s") could not be removed with administrator privileges. The items may have changed or macOS denied access."
+                return String(localized: "\(Self.fileCountLabel(failed.count)) could not be removed with administrator privileges. The items may have changed or macOS denied access.")
             }
-            return "\(failed.count) file\(failed.count == 1 ? "" : "s") could not be removed. Check that the items still exist and are not in use."
+            return String(localized: "\(Self.fileCountLabel(failed.count)) could not be removed. Check that the items still exist and are not in use.")
         }
 
         if let adminError, !adminError.isEmpty {
-            return "Administrator removal failed: \(adminError)"
+            return String(localized: "Administrator removal failed: \(adminError)")
         }
         return nil
+    }
+
+    private static func fileCountLabel(_ count: Int) -> String {
+        count == 1 ? String(localized: "1 file") : String(localized: "\(count) files")
     }
 
     private nonisolated static func isMissingFileError(_ nsError: NSError) -> Bool {
@@ -926,10 +934,19 @@ final class AppState: ObservableObject {
 
     // MARK: - Cleaning
 
-    func cleanAll(itemIDs: Set<UUID>? = nil) {
+    func cleanAll(itemIDs: Set<UUID>? = nil, scheduled: Bool = false) {
         guard !scanState.isActive else { return }
 
-        let itemsToClean = allResults.flatMap { $0.items }.filter { isItemSelected($0) && (itemIDs?.contains($0.id) ?? true) }
+        let itemsToClean = allResults.flatMap { $0.items }.filter { item in
+            guard itemIDs?.contains(item.id) ?? true else { return false }
+            guard isItemSelected(item) else { return false }
+            if scheduled && XcodeBuildMCPDerivedDataSupport.isManagedDerivedDataPath(item.path) {
+                // Scheduled XcodeBuildMCP cleanup is intentionally stricter
+                // than ordinary Xcode Junk: only old, unlocked rows qualify.
+                return XcodeBuildMCPDerivedDataSupport.isEligibleForScheduledAutoClean(item)
+            }
+            return true
+        }
         guard !itemsToClean.isEmpty else { return }
         let generation = UUID()
         cleanupGeneration = generation
@@ -1142,7 +1159,7 @@ final class AppState: ObservableObject {
         scanState = .completed
         let found = totalJunkSize
         if scheduler.config.autoClean && totalSelectedSize >= scheduler.config.minimumCleanSize {
-            cleanAll()
+            cleanAll(scheduled: true)
         }
         if scheduler.config.notifyOnCompletion {
             sendNotification(freed: found)

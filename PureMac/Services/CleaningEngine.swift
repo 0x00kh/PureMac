@@ -2,13 +2,24 @@ import Foundation
 
 actor CleaningEngine {
     private let fileManager = FileManager.default
+    /// Always symlink-resolved so allow-listed roots agree with ScanEngine and
+    /// XcodeBuildMCPDerivedDataSupport path checks on symlinked homes.
+    private let homeDirectory: URL
     private let binaryThinner = BinaryThinner()
+
+    init(homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser) {
+        self.homeDirectory = XcodeBuildMCPDerivedDataSupport.canonicalHomeDirectory(homeDirectory)
+    }
 
     struct CleaningResult {
         var freedSpace: Int64 = 0
         var itemsCleaned: Int = 0
         var errors: [String] = []
         var cleanedPaths: Set<String> = []
+        /// Destination paths returned by FileManager.trashItem. Keeping these
+        /// lets callers and tests distinguish recoverable Trash moves from
+        /// irreversible removals.
+        var trashedPaths: Set<String> = []
         // Items that user-level FileManager.removeItem refused with EACCES /
         // EPERM. These are root-owned and need an admin-privileged second
         // pass via cleanWithAdminPrivileges(items:).
@@ -130,14 +141,9 @@ actor CleaningEngine {
                 // Large files surfaced by scanLargeFiles are per-file items
                 // under Downloads/Documents/Desktop; those get a narrower check
                 // instead of the whole-subtree allow-list.
-                let pathAccepted: Bool = {
-                    if item.category == .largeFiles {
-                        return isExplicitSingleFileDeletable(resolvedPath: resolved)
-                    }
-                    // languageFiles never reaches here — it is handled above
-                    // via the staged re-sign flow, not the delete path.
-                    return isSafeToDelete(resolvedPath: resolved)
-                }()
+                // languageFiles never reaches here — it is handled above via
+                // the staged re-sign flow, not the delete path.
+                let pathAccepted = isSafeToDelete(item: item, resolvedPath: resolved)
                 guard pathAccepted else {
                     let msg = "Skipped symlink or unsafe path: \(item.path) -> \(resolved)"
                     Logger.shared.log(msg, level: .warning)
@@ -156,7 +162,52 @@ actor CleaningEngine {
                     continue
                 }
 
-                try fileManager.removeItem(at: itemURL)
+                let isManagedDerivedData = XcodeBuildMCPDerivedDataSupport.isManagedDerivedDataPath(
+                    item.path,
+                    homeDirectory: homeDirectory
+                ) || XcodeBuildMCPDerivedDataSupport.isManagedDerivedDataPath(
+                    resolved,
+                    homeDirectory: homeDirectory
+                )
+                if isManagedDerivedData {
+                    // The legacy shared root predates XcodeBuildMCP's
+                    // per-workspace lock, so only workspace DerivedData waits
+                    // for the lock before moving to the Trash.
+                    var lifecycleLock: XcodeBuildMCPDerivedDataSupport.LifecycleLock?
+                    if XcodeBuildMCPDerivedDataSupport.workspaceKey(
+                        forManagedDerivedDataPath: resolved,
+                        homeDirectory: homeDirectory
+                    ) != nil {
+                        guard let acquired = XcodeBuildMCPDerivedDataSupport.acquireLifecycleLock(
+                            forManagedDerivedDataPath: resolved,
+                            homeDirectory: homeDirectory,
+                            fileManager: fileManager
+                        ) else {
+                            let detail = "Skipped XcodeBuildMCP DerivedData: lifecycle lock is unavailable: \(item.path)"
+                            Logger.shared.log(detail, level: .warning)
+                            result.errors.append(detail)
+                            continue
+                        }
+                        lifecycleLock = acquired
+                    }
+                    defer {
+                        if let lifecycleLock {
+                            XcodeBuildMCPDerivedDataSupport.releaseLifecycleLock(
+                                lifecycleLock,
+                                fileManager: fileManager
+                            )
+                        }
+                    }
+                    // PureMac's safety contract is Trash-only for recoverable
+                    // cleanup. XcodeBuildMCP DerivedData must not be unlinked.
+                    var resulting: NSURL?
+                    try fileManager.trashItem(at: resolvedURL, resultingItemURL: &resulting)
+                    if let trashedPath = resulting?.path {
+                        result.trashedPaths.insert(trashedPath)
+                    }
+                } else {
+                    try fileManager.removeItem(at: itemURL)
+                }
                 result.freedSpace += item.size
                 result.itemsCleaned += 1
                 result.cleanedPaths.insert(item.path)
@@ -169,6 +220,15 @@ actor CleaningEngine {
                     (nsError.domain == NSPOSIXErrorDomain &&
                         (nsError.code == Int(EACCES) || nsError.code == Int(EPERM)))
                 if isPermissionDenied {
+                    if XcodeBuildMCPDerivedDataSupport.isManagedDerivedDataPath(
+                        item.path,
+                        homeDirectory: homeDirectory
+                    ) {
+                        let detail = "Refusing administrator escalation for XcodeBuildMCP DerivedData: \(item.path)"
+                        result.errors.append(detail)
+                        Logger.shared.log(detail, level: .warning)
+                        continue
+                    }
                     // SIP-protected/immutable entries fail even as root, so
                     // escalating them just wastes an auth prompt and produces
                     // a bogus "survived admin removal" error. Record and move on.
@@ -220,16 +280,28 @@ actor CleaningEngine {
                 return nil
             }
             let resolved = URL(fileURLWithPath: item.path).resolvingSymlinksInPath().path
-            let accepted: Bool = {
-                if item.category == .largeFiles {
-                    return isExplicitSingleFileDeletable(resolvedPath: resolved)
-                }
-                // languageFiles is deliberately absent: an admin rm -rf of an
-                // .lproj would break the bundle's signature seal with no
-                // re-sign, so those items never escalate — they only go
-                // through the staged BinaryThinner flow in cleanItems.
-                return isSafeToDelete(resolvedPath: resolved) || isSafeUninstallEscalationPath(resolved)
-            }()
+            let isManaged = XcodeBuildMCPDerivedDataSupport.isManagedDerivedDataPath(
+                item.path,
+                homeDirectory: homeDirectory
+            ) || XcodeBuildMCPDerivedDataSupport.isManagedDerivedDataPath(
+                resolved,
+                homeDirectory: homeDirectory
+            )
+            guard !isManaged else {
+                Logger.shared.log(
+                    "Refusing administrator escalation for XcodeBuildMCP DerivedData: \(item.path)",
+                    level: .warning
+                )
+                return nil
+            }
+            // languageFiles is deliberately absent: an admin rm -rf of an
+            // .lproj would break the bundle's signature seal with no re-sign,
+            // so those items never escalate.
+            let accepted = isSafeToDelete(
+                item: item,
+                resolvedPath: resolved,
+                includeUninstallPaths: true
+            )
             if !accepted {
                 Logger.shared.log("Refusing admin escalation for unsafe path: \(item.path)", level: .warning)
             }
@@ -485,18 +557,48 @@ actor CleaningEngine {
 
     // MARK: - Helpers
 
+    private func isSafeToDelete(
+        item: CleanableItem,
+        resolvedPath: String,
+        includeUninstallPaths: Bool = false
+    ) -> Bool {
+        let originalIsManaged = XcodeBuildMCPDerivedDataSupport.isManagedDerivedDataPath(
+            item.path,
+            homeDirectory: homeDirectory
+        )
+        let resolvedIsManaged = XcodeBuildMCPDerivedDataSupport.isManagedDerivedDataPath(
+            resolvedPath,
+            homeDirectory: homeDirectory
+        )
+
+        // A managed path must remain managed after symlink resolution. Do not
+        // fall through to broader roots such as Application Support: that
+        // would turn a symlinked XcodeBuildMCP root into an allow-list bypass.
+        if originalIsManaged || resolvedIsManaged {
+            let original = (item.path as NSString).standardizingPath
+            let resolved = (resolvedPath as NSString).standardizingPath
+            return originalIsManaged && resolvedIsManaged && original == resolved
+        }
+        if item.category == .largeFiles {
+            return isExplicitSingleFileDeletable(resolvedPath: resolvedPath)
+        }
+        return isSafeToDelete(resolvedPath: resolvedPath)
+            || (includeUninstallPaths && isSafeUninstallEscalationPath(resolvedPath))
+    }
+
     /// Validates that a resolved path is safe to delete.
     /// Prevents symlink attacks where a link in ~/Library/Caches points to ~/.ssh.
     /// Downloads, Documents, and Desktop are intentionally NOT whole-subtree
     /// allow-listed - scanLargeFiles emits per-file items instead, so those
     /// deletions can still happen through the explicit per-item flow.
     private func isSafeToDelete(resolvedPath: String) -> Bool {
+        let home = homeDirectory.path
         // Cloud File Provider state is never deletable, whatever category asked
         // and whichever allowed root it happens to sit under (issue #142).
         // Checked before the allowlist because several provider directories live
         // inside ~/Library/Caches and ~/Library/Application Support, which are
         // themselves allowed roots.
-        if ProviderPaths.isProviderOwned(resolvedPath) {
+        if ProviderPaths.isProviderOwned(resolvedPath, homeDirectory: homeDirectory) {
             Logger.shared.log(
                 "Refusing to delete cloud provider state: \(resolvedPath)",
                 level: .warning
@@ -504,7 +606,6 @@ actor CleaningEngine {
             return false
         }
 
-        let home = fileManager.homeDirectoryForCurrentUser.path
         let allowedRoots = [
             "\(home)/Library/Caches",
             "\(home)/Library/Logs",
@@ -756,7 +857,7 @@ actor CleaningEngine {
     /// was explicitly surfaced by a scanner (e.g. scanLargeFiles). Whole-subtree
     /// deletion of those roots remains blocked.
     func isExplicitSingleFileDeletable(resolvedPath: String) -> Bool {
-        let home = fileManager.homeDirectoryForCurrentUser.path
+        let home = homeDirectory.path
         let perFileRoots = [
             "\(home)/Downloads/",
             "\(home)/Documents/",
