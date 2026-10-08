@@ -872,6 +872,7 @@
 "tmutil is not available on this Mac." = "tmutil is not available on this Mac.";
 
 /* Additional interface strings. */
+"%lld processes" = "%lld processes";
 "1 process" = "1 process";
 "A PureMac update is available" = "A PureMac update is available";
 "About these readings" = "About these readings";

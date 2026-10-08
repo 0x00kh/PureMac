@@ -871,7 +871,8 @@
 "tmutil is not available on this Mac." = "此 Mac 上无法使用 tmutil。";
 
 /* Additional interface strings. */
-"1 process" = "1 process";
+"%lld processes" = "%lld 个进程";
+"1 process" = "1 个进程";
 "A PureMac update is available" = "A PureMac update is available";
 "About these readings" = "About these readings";
 "App memory shows resident memory, including shared pages. App totals can differ from the summary." = "App memory shows resident memory, including shared pages. App totals can differ from the summary.";
