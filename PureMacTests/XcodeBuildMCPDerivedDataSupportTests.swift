@@ -3,18 +3,26 @@ import XCTest
 
 final class XcodeBuildMCPDerivedDataSupportTests: XCTestCase {
     func testXcodeJunkIncludesManagedDerivedDataForEachWorkspace() async throws {
+        try await assertXcodeJunkIncludesManagedDerivedDataForEachWorkspace(tool: "XcodeBuildMCP")
+    }
+
+    func testXcodeJunkIncludesMobileBuildMCPDerivedDataForEachWorkspace() async throws {
+        try await assertXcodeJunkIncludesManagedDerivedDataForEachWorkspace(tool: "MobileBuildMCP")
+    }
+
+    private func assertXcodeJunkIncludesManagedDerivedDataForEachWorkspace(tool: String) async throws {
         let fileManager = FileManager.default
         let temporaryHome = fileManager.temporaryDirectory
             .appendingPathComponent("PureMac-XcodeBuildMCP-\(UUID().uuidString)", isDirectory: true)
         defer { try? fileManager.removeItem(at: temporaryHome) }
 
         let workspaceRoot = temporaryHome
-            .appendingPathComponent("Library/Developer/XcodeBuildMCP/workspaces/PureMac-59316969cafe", isDirectory: true)
+            .appendingPathComponent("Library/Developer/\(tool)/workspaces/PureMac-59316969cafe", isDirectory: true)
         let derivedData = workspaceRoot.appendingPathComponent("DerivedData", isDirectory: true)
         let logs = workspaceRoot.appendingPathComponent("logs", isDirectory: true)
         let outsideDirectory = temporaryHome.appendingPathComponent("outside", isDirectory: true)
         let symlinkedDerivedData = temporaryHome
-            .appendingPathComponent("Library/Developer/XcodeBuildMCP/workspaces/Symlinked-111111111111/DerivedData")
+            .appendingPathComponent("Library/Developer/\(tool)/workspaces/Symlinked-111111111111/DerivedData")
         try fileManager.createDirectory(at: derivedData, withIntermediateDirectories: true)
         try fileManager.createDirectory(at: logs, withIntermediateDirectories: true)
         try fileManager.createDirectory(
@@ -40,7 +48,7 @@ final class XcodeBuildMCPDerivedDataSupportTests: XCTestCase {
             },
             "Expected \(expectedPath); scanned: \(result.items.map(\.path))"
         )
-        XCTAssertEqual(item.name, "XcodeBuildMCP: PureMac")
+        XCTAssertEqual(item.name, "\(tool): PureMac")
         XCTAssertFalse(item.isSelected)
         XCTAssertFalse(result.items.contains { $0.path == logs.path })
         XCTAssertFalse(result.items.contains { $0.path == symlinkedDerivedData.path })
@@ -129,13 +137,21 @@ final class XcodeBuildMCPDerivedDataSupportTests: XCTestCase {
     }
 
     func testCleaningManagedDerivedDataLeavesWorkspaceStateIntact() async throws {
+        try await assertCleaningManagedDerivedDataLeavesWorkspaceStateIntact(tool: "XcodeBuildMCP")
+    }
+
+    func testCleaningMobileBuildMCPDerivedDataLeavesWorkspaceStateIntact() async throws {
+        try await assertCleaningManagedDerivedDataLeavesWorkspaceStateIntact(tool: "MobileBuildMCP")
+    }
+
+    private func assertCleaningManagedDerivedDataLeavesWorkspaceStateIntact(tool: String) async throws {
         let fileManager = FileManager.default
         let temporaryHome = fileManager.temporaryDirectory
             .appendingPathComponent("PureMac-XcodeBuildMCP-Clean-\(UUID().uuidString)", isDirectory: true)
         defer { try? fileManager.removeItem(at: temporaryHome) }
 
         let workspaceRoot = temporaryHome
-            .appendingPathComponent("Library/Developer/XcodeBuildMCP/workspaces/PureMac-59316969cafe", isDirectory: true)
+            .appendingPathComponent("Library/Developer/\(tool)/workspaces/PureMac-59316969cafe", isDirectory: true)
         let derivedData = workspaceRoot.appendingPathComponent("DerivedData", isDirectory: true)
         let preservedDirectories = ["logs", "state", "locks", "result-bundles", "test-products"].map {
             workspaceRoot.appendingPathComponent($0, isDirectory: true)
@@ -150,7 +166,7 @@ final class XcodeBuildMCPDerivedDataSupportTests: XCTestCase {
             .write(to: derivedData.appendingPathComponent("build-product"))
 
         let scan = await ScanEngine(homeDirectory: temporaryHome).scanCategory(.xcodeJunk)
-        let item = try XCTUnwrap(scan.items.first { $0.name == "XcodeBuildMCP: PureMac" })
+        let item = try XCTUnwrap(scan.items.first { $0.name == "\(tool): PureMac" })
         let result = await CleaningEngine(homeDirectory: temporaryHome)
             .cleanItems([item]) { _ in }
 
@@ -194,6 +210,14 @@ final class XcodeBuildMCPDerivedDataSupportTests: XCTestCase {
         ))
         XCTAssertFalse(XcodeBuildMCPDerivedDataSupport.isManagedDerivedDataPath(
             "\(managedRoot)-backup/workspaces/PureMac-59316969cafe/DerivedData",
+            homeDirectory: home
+        ))
+        XCTAssertTrue(XcodeBuildMCPDerivedDataSupport.isManagedDerivedDataPath(
+            "/Users/tester/Library/Developer/MobileBuildMCP/workspaces/PureMac-59316969cafe/DerivedData",
+            homeDirectory: home
+        ))
+        XCTAssertFalse(XcodeBuildMCPDerivedDataSupport.isManagedDerivedDataPath(
+            "/Users/tester/Library/Developer/MobileBuildMCP/workspaces/PureMac-59316969cafe/logs",
             homeDirectory: home
         ))
     }
@@ -284,13 +308,21 @@ final class XcodeBuildMCPDerivedDataSupportTests: XCTestCase {
     }
 
     func testCleaningSkipsDerivedDataWhenLifecycleLockIsHeld() async throws {
+        try await assertCleaningSkipsDerivedDataWhenLifecycleLockIsHeld(tool: "XcodeBuildMCP")
+    }
+
+    func testCleaningSkipsMobileBuildMCPDerivedDataWhenLifecycleLockIsHeld() async throws {
+        try await assertCleaningSkipsDerivedDataWhenLifecycleLockIsHeld(tool: "MobileBuildMCP")
+    }
+
+    private func assertCleaningSkipsDerivedDataWhenLifecycleLockIsHeld(tool: String) async throws {
         let fileManager = FileManager.default
         let temporaryHome = fileManager.temporaryDirectory
             .appendingPathComponent("PureMac-XcodeBuildMCP-Lock-\(UUID().uuidString)", isDirectory: true)
         defer { try? fileManager.removeItem(at: temporaryHome) }
 
         let workspaceRoot = temporaryHome
-            .appendingPathComponent("Library/Developer/XcodeBuildMCP/workspaces/PureMac-59316969cafe", isDirectory: true)
+            .appendingPathComponent("Library/Developer/\(tool)/workspaces/PureMac-59316969cafe", isDirectory: true)
         let derivedData = workspaceRoot.appendingPathComponent("DerivedData", isDirectory: true)
         let lockDir = workspaceRoot
             .appendingPathComponent("locks/filesystem-lifecycle.lock", isDirectory: true)
@@ -311,7 +343,7 @@ final class XcodeBuildMCPDerivedDataSupportTests: XCTestCase {
         try ownerData.write(to: lockDir.appendingPathComponent("owner.json"))
 
         let item = CleanableItem(
-            name: "XcodeBuildMCP: PureMac",
+            name: "\(tool): PureMac",
             path: derivedData.path,
             size: 4_096,
             category: .xcodeJunk,

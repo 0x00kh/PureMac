@@ -116,11 +116,12 @@ final class AppStateTests: XCTestCase {
         XCTAssertEqual(state.scanState, .completed)
     }
 
-    func testManagedDerivedDataRequiresManualSelectionEvenForScheduledCleanup() {
+    func testManagedDerivedDataRequiresManualSelectionEvenForScheduledCleanup() throws {
         let state = AppState(performStartupTasks: false)
+        let managedRoot = try XCTUnwrap(XcodeBuildMCPDerivedDataSupport.managedRoots().first)
         let item = CleanableItem(
             name: "XcodeBuildMCP: Fixture",
-            path: XcodeBuildMCPDerivedDataSupport.managedRoot()
+            path: managedRoot
                 .appendingPathComponent("workspaces/Fixture-\(UUID().uuidString)/DerivedData").path,
             size: 4_096,
             category: .xcodeJunk,

@@ -15,6 +15,9 @@ enum XcodeBuildMCPDerivedDataSupport {
     /// Scheduled cleanup only considers build data that has been unused for a
     /// full week. Manual cleanup remains available for any discovered item.
     static let scheduledCleanupAge: TimeInterval = 7 * 24 * 60 * 60
+    /// XcodeBuildMCP 2.7.1 was renamed MobileBuildMCP and moved its state
+    /// directory without migrating the old one. Both roots share one layout.
+    static let managedDirectoryNames = ["XcodeBuildMCP", "MobileBuildMCP"]
 
     struct LifecycleLock {
         fileprivate let directory: URL
@@ -25,34 +28,39 @@ enum XcodeBuildMCPDerivedDataSupport {
         homeDirectory.resolvingSymlinksInPath().standardizedFileURL
     }
 
-    static func managedRoot(
+    static func managedRoots(
         homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser
-    ) -> URL {
-        canonicalHomeDirectory(homeDirectory)
-            .appendingPathComponent("Library/Developer/XcodeBuildMCP", isDirectory: true)
+    ) -> [URL] {
+        let home = canonicalHomeDirectory(homeDirectory)
+        return managedDirectoryNames.map {
+            home.appendingPathComponent("Library/Developer/\($0)", isDirectory: true)
+        }
+    }
+
+    /// The managed root that contains `path`, if any.
+    static func managedRoot(
+        containing path: String,
+        homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser
+    ) -> URL? {
+        let normalized = (path as NSString).standardizingPath
+        return managedRoots(homeDirectory: homeDirectory).first { root in
+            normalized == root.path || normalized.hasPrefix(root.path + "/")
+        }
     }
 
     static func isManagedDerivedDataPath(
         _ path: String,
         homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser
     ) -> Bool {
-        let normalized = (path as NSString).standardizingPath
-        let root = managedRoot(homeDirectory: homeDirectory).path
-
-        // XcodeBuildMCP before v2.5 used one shared DerivedData directory.
-        if normalized == (root as NSString).appendingPathComponent("DerivedData") {
-            return true
+        guard let root = managedRoot(containing: path, homeDirectory: homeDirectory) else {
+            return false
         }
 
-        let workspacesRoot = (root as NSString).appendingPathComponent("workspaces")
-        let prefix = workspacesRoot + "/"
-        guard normalized.hasPrefix(prefix) else { return false }
-
-        let relative = String(normalized.dropFirst(prefix.count))
-        let components = relative.split(separator: "/", omittingEmptySubsequences: false)
-        return components.count == 2
-            && !components[0].isEmpty
-            && components[1] == "DerivedData"
+        // XcodeBuildMCP before v2.5 used one shared DerivedData directory.
+        if (path as NSString).standardizingPath == root.appendingPathComponent("DerivedData").path {
+            return true
+        }
+        return workspaceKey(forManagedDerivedDataPath: path, homeDirectory: homeDirectory) != nil
     }
 
     /// Returns whether a managed DerivedData item may participate in scheduled
@@ -85,10 +93,11 @@ enum XcodeBuildMCPDerivedDataSupport {
         forManagedDerivedDataPath path: String,
         homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser
     ) -> String? {
+        guard let root = managedRoot(containing: path, homeDirectory: homeDirectory) else {
+            return nil
+        }
         let normalized = (path as NSString).standardizingPath
-        let workspacesRoot = managedRoot(homeDirectory: homeDirectory)
-            .appendingPathComponent("workspaces", isDirectory: true)
-            .path + "/"
+        let workspacesRoot = root.appendingPathComponent("workspaces", isDirectory: true).path + "/"
         guard normalized.hasPrefix(workspacesRoot) else { return nil }
         let relative = String(normalized.dropFirst(workspacesRoot.count))
         let components = relative.split(separator: "/", omittingEmptySubsequences: false)
@@ -108,15 +117,12 @@ enum XcodeBuildMCPDerivedDataSupport {
         now: Date = Date(),
         isProcessAlive: (Int32) -> Bool = isProcessAlive
     ) -> Bool {
-        guard let workspaceKey = workspaceKey(
+        guard let lockDir = lifecycleLockDirectory(
             forManagedDerivedDataPath: path,
             homeDirectory: homeDirectory
         ) else {
             return false
         }
-
-        let lockDir = managedRoot(homeDirectory: homeDirectory)
-            .appendingPathComponent("workspaces/\(workspaceKey)/locks/\(lifecycleLockDirectoryName)", isDirectory: true)
 
         var isDirectory: ObjCBool = false
         guard fileManager.fileExists(atPath: lockDir.path, isDirectory: &isDirectory),
@@ -158,18 +164,13 @@ enum XcodeBuildMCPDerivedDataSupport {
         homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser,
         fileManager: FileManager = .default
     ) -> LifecycleLock? {
-        guard let workspaceKey = workspaceKey(
+        guard let lockDirectory = lifecycleLockDirectory(
             forManagedDerivedDataPath: path,
             homeDirectory: homeDirectory
         ) else {
             return nil
         }
 
-        let lockDirectory = managedRoot(homeDirectory: homeDirectory)
-            .appendingPathComponent(
-                "workspaces/\(workspaceKey)/locks/\(lifecycleLockDirectoryName)",
-                isDirectory: true
-            )
         do {
             try fileManager.createDirectory(
                 at: lockDirectory.deletingLastPathComponent(),
@@ -221,33 +222,34 @@ enum XcodeBuildMCPDerivedDataSupport {
         homeDirectory: URL,
         fileManager: FileManager = .default
     ) -> [(name: String, url: URL)] {
-        let root = managedRoot(homeDirectory: homeDirectory)
-        guard isRealDirectory(root, fileManager: fileManager) else { return [] }
-
         var results: [(name: String, url: URL)] = []
 
-        let legacyDerivedData = root.appendingPathComponent("DerivedData", isDirectory: true)
-        if isRealDirectory(legacyDerivedData, fileManager: fileManager) {
-            results.append((name: "XcodeBuildMCP: Legacy DerivedData", url: legacyDerivedData))
-        }
+        for root in managedRoots(homeDirectory: homeDirectory)
+        where isRealDirectory(root, fileManager: fileManager) {
+            let tool = root.lastPathComponent
+            let legacyDerivedData = root.appendingPathComponent("DerivedData", isDirectory: true)
+            if isRealDirectory(legacyDerivedData, fileManager: fileManager) {
+                results.append((name: "\(tool): Legacy DerivedData", url: legacyDerivedData))
+            }
 
-        let workspacesRoot = root.appendingPathComponent("workspaces", isDirectory: true)
-        guard isRealDirectory(workspacesRoot, fileManager: fileManager),
-              let workspaces = try? fileManager.contentsOfDirectory(
-                  at: workspacesRoot,
-                  includingPropertiesForKeys: nil,
-                  options: [.skipsHiddenFiles]
-              ) else {
-            return results
-        }
+            let workspacesRoot = root.appendingPathComponent("workspaces", isDirectory: true)
+            guard isRealDirectory(workspacesRoot, fileManager: fileManager),
+                  let workspaces = try? fileManager.contentsOfDirectory(
+                      at: workspacesRoot,
+                      includingPropertiesForKeys: nil,
+                      options: [.skipsHiddenFiles]
+                  ) else {
+                continue
+            }
 
-        for workspace in workspaces where isRealDirectory(workspace, fileManager: fileManager) {
-            let derivedData = workspace.appendingPathComponent("DerivedData", isDirectory: true)
-            guard isRealDirectory(derivedData, fileManager: fileManager) else { continue }
-            results.append((
-                name: "XcodeBuildMCP: \(displayName(forWorkspaceKey: workspace.lastPathComponent))",
-                url: derivedData
-            ))
+            for workspace in workspaces where isRealDirectory(workspace, fileManager: fileManager) {
+                let derivedData = workspace.appendingPathComponent("DerivedData", isDirectory: true)
+                guard isRealDirectory(derivedData, fileManager: fileManager) else { continue }
+                results.append((
+                    name: "\(tool): \(displayName(forWorkspaceKey: workspace.lastPathComponent))",
+                    url: derivedData
+                ))
+            }
         }
 
         return results
@@ -295,6 +297,23 @@ enum XcodeBuildMCPDerivedDataSupport {
         if pid <= 1 { return false }
         if kill(pid, 0) == 0 { return true }
         return errno == EPERM
+    }
+
+    private static func lifecycleLockDirectory(
+        forManagedDerivedDataPath path: String,
+        homeDirectory: URL
+    ) -> URL? {
+        guard let root = managedRoot(containing: path, homeDirectory: homeDirectory),
+              let workspaceKey = workspaceKey(
+                  forManagedDerivedDataPath: path,
+                  homeDirectory: homeDirectory
+              ) else {
+            return nil
+        }
+        return root.appendingPathComponent(
+            "workspaces/\(workspaceKey)/locks/\(lifecycleLockDirectoryName)",
+            isDirectory: true
+        )
     }
 }
 
