@@ -152,7 +152,7 @@ actor ScanEngine {
             "\(home)/Library/Caches/npm",
             "\(home)/Library/Caches/Yarn",
             "\(home)/Library/Caches/dev.kdrag0n.MacVirt",
-        ] + ProviderPaths.deniedRoots).map(normalizePath))
+        ] + ProviderPaths.deniedRoots(homeDirectory: URL(fileURLWithPath: home, isDirectory: true))).map(normalizePath))
 
         // Dynamically enumerate ~/Library/Caches/ so every subdirectory is visible
         let cachePath = "\(home)/Library/Caches"

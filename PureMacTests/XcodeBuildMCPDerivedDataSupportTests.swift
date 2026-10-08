@@ -540,6 +540,52 @@ final class XcodeBuildMCPDerivedDataSupportTests: XCTestCase {
         XCTAssertFalse(fileManager.fileExists(atPath: cacheDir.appendingPathComponent("blob").path))
     }
 
+    func testSymlinkedHomeStillRefusesCloudProviderState() async throws {
+        let fileManager = FileManager.default
+        let container = fileManager.temporaryDirectory
+            .appendingPathComponent("PureMac-XcodeBuildMCP-ProviderHome-\(UUID().uuidString)", isDirectory: true)
+        defer { try? fileManager.removeItem(at: container) }
+
+        let realHome = container.appendingPathComponent("real-home", isDirectory: true)
+        let linkedHome = container.appendingPathComponent("linked-home", isDirectory: true)
+        let birdCache = realHome.appendingPathComponent("Library/Caches/com.apple.bird", isDirectory: true)
+        let cloudStorage = realHome.appendingPathComponent("Library/CloudStorage/Dropbox", isDirectory: true)
+        let ordinaryCache = realHome.appendingPathComponent("Library/Caches/com.example.junk", isDirectory: true)
+        for directory in [birdCache, cloudStorage, ordinaryCache] {
+            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+            try Data(repeating: 0x22, count: 4_096).write(to: directory.appendingPathComponent("blob"))
+        }
+        try fileManager.createSymbolicLink(at: linkedHome, withDestinationURL: realHome)
+
+        let scan = await ScanEngine(homeDirectory: linkedHome).scanCategory(.userCache)
+        XCTAssertTrue(scan.items.contains { $0.path.hasSuffix("/Library/Caches/com.example.junk") })
+        XCTAssertFalse(scan.items.contains { $0.path.hasSuffix("/Library/Caches/com.apple.bird") })
+
+        let items = [birdCache, cloudStorage].map { directory in
+            CleanableItem(
+                name: directory.lastPathComponent,
+                path: directory.path,
+                size: 4_096,
+                category: .userCache,
+                isSelected: true,
+                lastModified: nil
+            )
+        }
+        let result = await CleaningEngine(homeDirectory: linkedHome).cleanItems(items) { _ in }
+
+        XCTAssertEqual(result.itemsCleaned, 0)
+        XCTAssertTrue(result.cleanedPaths.isEmpty)
+        XCTAssertEqual(result.errors.count, 2)
+        for directory in [birdCache, cloudStorage] {
+            XCTAssertTrue(fileManager.fileExists(atPath: directory.appendingPathComponent("blob").path))
+        }
+        XCTAssertTrue(ProviderPaths.isProviderOwned(birdCache.path, homeDirectory: linkedHome))
+        XCTAssertTrue(ProviderPaths.isProviderOwned(
+            linkedHome.appendingPathComponent("Library/CloudStorage/Dropbox").path,
+            homeDirectory: linkedHome
+        ))
+    }
+
     func testScheduledAutoCleanAllowsOldUnlockedManagedDerivedData() {
         let item = CleanableItem(
             name: "XcodeBuildMCP: PureMac",

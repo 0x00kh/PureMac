@@ -605,7 +605,7 @@ actor CleaningEngine {
         // Checked before the allowlist because several provider directories live
         // inside ~/Library/Caches and ~/Library/Application Support, which are
         // themselves allowed roots.
-        if ProviderPaths.isProviderOwned(resolvedPath) {
+        if ProviderPaths.isProviderOwned(resolvedPath, homeDirectory: homeDirectory) {
             Logger.shared.log(
                 "Refusing to delete cloud provider state: \(resolvedPath)",
                 level: .warning
@@ -864,7 +864,7 @@ actor CleaningEngine {
     /// was explicitly surfaced by a scanner (e.g. scanLargeFiles). Whole-subtree
     /// deletion of those roots remains blocked.
     func isExplicitSingleFileDeletable(resolvedPath: String) -> Bool {
-        let home = fileManager.homeDirectoryForCurrentUser.path
+        let home = homeDirectory.path
         let perFileRoots = [
             "\(home)/Downloads/",
             "\(home)/Documents/",
