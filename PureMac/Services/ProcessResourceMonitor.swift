@@ -202,16 +202,13 @@ final class ProcessResourceMonitor: ObservableObject {
         isSampling = active
         samplingTask?.cancel()
         samplingTask = nil
-        consumers = []
-        icons.removeAll()
-        names.removeAll()
-        protectedProcessCount = 0
-        changedProcessCount = 0
+        guard active else { return }
+        // The last sample stays on screen while paused. Resuming starts a new
+        // session-scoped sampler, so the baseline resets and a rapid hide/show
+        // cannot feed the next interval from an old task's counters.
         isWarmingUp = true
         samplingFailed = false
-        guard active else { return }
-        // Session-scoped sampler releases its counters when cancelled. A rapid
-        // hide/show cannot reset the next session's baseline from an old task.
+        changedProcessCount = 0
         let sampler = ProcessResourceSampler()
         samplingTask = Task { [weak self, sampler] in
             while !Task.isCancelled {

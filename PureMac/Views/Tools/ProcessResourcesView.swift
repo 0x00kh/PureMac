@@ -49,15 +49,18 @@ struct ProcessResourcesView: View {
             .padding(9)
             .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 8))
 
+            // Pausing keeps the last sample on screen under the notice.
             if !isActive {
                 Label("Live updates paused", systemImage: "pause.circle")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
-            } else if monitor.samplingFailed {
+            }
+
+            if isActive && monitor.samplingFailed {
                 Label("Process information is unavailable. Try Activity Monitor for more detail.", systemImage: "exclamationmark.triangle")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
-            } else if monitor.consumers.isEmpty && monitor.isWarmingUp {
+            } else if isActive && monitor.consumers.isEmpty && monitor.isWarmingUp {
                 HStack(spacing: 9) {
                     ProgressView().controlSize(.small)
                     Text("Measuring apps and processes…")
@@ -66,10 +69,12 @@ struct ProcessResourcesView: View {
                 }
                 .padding(.vertical, 10)
             } else if visibleConsumers.isEmpty {
-                Text("No matching apps or processes")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 10)
+                if isActive || !monitor.consumers.isEmpty {
+                    Text("No matching apps or processes")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 10)
+                }
             } else {
                 HStack {
                     Text("Name")
